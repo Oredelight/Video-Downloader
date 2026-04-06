@@ -1,21 +1,397 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Downloader</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dreamy Downloader ✨</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --rose:    #f472b6;
+    --rose-lt: #fce7f3;
+    --rose-md: #fbcfe8;
+    --lilac:   #c084fc;
+    --lilac-lt:#f3e8ff;
+    --cream:   #fffbf7;
+    --white:   #ffffff;
+    --ink:     #4a2060;
+    --ink-mid: #7c4d99;
+    --ink-dim: #b89fc8;
+    --red-err: #f43f5e;
+    --radius:  20px;
+    --radius-sm: 12px;
+    --shadow:  0 8px 40px rgba(196,130,252,0.18);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px 48px;
+    overflow-x: hidden;
+  }
+
+  .blob {
+    position: fixed; border-radius: 50%;
+    filter: blur(70px); opacity: 0.35; pointer-events: none; z-index: 0;
+  }
+  .blob-1 { width: 500px; height: 500px; background: #fce7f3; top: -150px; left: -150px; }
+  .blob-2 { width: 400px; height: 400px; background: #f3e8ff; bottom: -120px; right: -120px; }
+
+  .stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .star {
+    position: absolute; width: 6px; height: 6px; background: var(--rose);
+    clip-path: polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);
+    opacity: 0; animation: twinkle var(--dur,4s) ease-in-out infinite var(--delay,0s);
+  }
+  @keyframes twinkle {
+    0%,100% { opacity:0; transform:scale(0.5) rotate(0deg); }
+    50%      { opacity:0.6; transform:scale(1) rotate(180deg); }
+  }
+
+  .wrapper {
+    position: relative; z-index: 1;
+    width: 100%; max-width: 500px;
+    display: flex; flex-direction: column; align-items: center; gap: 20px;
+  }
+
+  .header { text-align: center; margin-bottom: 4px; }
+  .header-emoji { font-size: 48px; display: block; margin-bottom: 10px; animation: float 3s ease-in-out infinite; }
+  @keyframes float { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-8px); } }
+
+  .header h1 {
+    font-family: 'Playfair Display', serif; font-size: 34px; font-weight: 900;
+    background: linear-gradient(135deg, var(--rose) 0%, var(--lilac) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    line-height: 1.15; margin-bottom: 6px;
+  }
+  .header p { font-size: 14px; color: var(--ink-dim); font-weight: 600; }
+
+  .card {
+    width: 100%; background: var(--white); border-radius: var(--radius);
+    padding: 24px 24px 20px; box-shadow: var(--shadow);
+    border: 1.5px solid rgba(244,114,182,0.15);
+  }
+  .card-label {
+    font-size: 12px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase;
+    color: var(--ink-dim); margin-bottom: 12px;
+  }
+
+  .input-pill {
+    display: flex; align-items: center; background: var(--rose-lt);
+    border: 2px solid transparent; border-radius: 50px;
+    padding: 6px 6px 6px 18px; transition: border-color 0.2s, box-shadow 0.2s; gap: 8px;
+  }
+  .input-pill:focus-within { border-color: var(--rose); box-shadow: 0 0 0 4px rgba(244,114,182,0.12); }
+
+  .url-input {
+    flex: 1; background: none; border: none; outline: none;
+    font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 600;
+    color: var(--ink); min-width: 0;
+  }
+  .url-input::placeholder { color: var(--ink-dim); }
+
+  .fetch-btn {
+    flex-shrink: 0;
+    background: linear-gradient(135deg, var(--rose) 0%, var(--lilac) 100%);
+    color: white; border: none; border-radius: 50px; padding: 10px 20px;
+    font-family: 'Nunito', sans-serif; font-size: 13px; font-weight: 800; cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s; box-shadow: 0 4px 14px rgba(244,114,182,0.4);
+    white-space: nowrap;
+  }
+  .fetch-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  .fetch-btn:active { transform: scale(0.97); }
+
+  .platform-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 14px; }
+  .platform-pill {
+    font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 50px;
+    background: var(--cream); color: var(--ink-mid); border: 1.5px solid var(--rose-md);
+  }
+
+  .spinner-wrap {
+    display: none; align-items: center; gap: 10px;
+    color: var(--ink-dim); font-size: 13px; font-weight: 700;
+  }
+  .spinner-wrap.visible { display: flex; }
+  .spinner {
+    width: 22px; height: 22px; border: 3px solid var(--rose-md);
+    border-top-color: var(--rose); border-radius: 50%; animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error-box {
+    width: 100%; background: #fff1f2; border: 1.5px solid #fecdd3;
+    border-radius: var(--radius-sm); padding: 14px 16px;
+    color: var(--red-err); font-size: 13px; font-weight: 700;
+    display: flex; align-items: flex-start; gap: 10px;
+  }
+
+  .result-card {
+    width: 100%; background: var(--white); border-radius: var(--radius);
+    overflow: hidden; box-shadow: var(--shadow);
+    border: 1.5px solid rgba(244,114,182,0.15);
+    animation: slideUp 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes slideUp {
+    from { opacity:0; transform:translateY(16px) scale(0.98); }
+    to   { opacity:1; transform:translateY(0) scale(1); }
+  }
+
+  .thumb-wrap { position: relative; width: 100%; aspect-ratio: 16/9; overflow: hidden; background: var(--rose-lt); }
+  .thumb-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .thumb-overlay { position: absolute; inset: 0; background: linear-gradient(to top,rgba(74,32,96,0.75) 0%,transparent 55%); }
+  .platform-tag {
+    position: absolute; top: 12px; left: 12px; font-size: 11px; font-weight: 800;
+    letter-spacing: 0.8px; text-transform: uppercase; padding: 4px 12px; border-radius: 50px;
+    backdrop-filter: blur(10px); background: rgba(255,255,255,0.2); color: white;
+    border: 1px solid rgba(255,255,255,0.3);
+  }
+  .thumb-title {
+    position: absolute; bottom: 14px; left: 16px; right: 16px;
+    font-size: 15px; font-weight: 800; color: white; line-height: 1.35;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+
+  .dl-section { padding: 22px 24px 24px; }
+  .section-label {
+    font-size: 12px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase;
+    color: var(--ink-dim); margin-bottom: 14px; display: flex; align-items: center; gap: 6px;
+  }
+
+  .quality-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(78px,1fr)); gap: 10px; margin-bottom: 18px; }
+  .q-input { display: none; }
+  .q-tile {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 4px; padding: 12px 6px; background: var(--cream); border: 2px solid #f5e8f5;
+    border-radius: var(--radius-sm); cursor: pointer; transition: all 0.18s; user-select: none;
+  }
+  .q-tile:hover { border-color: var(--rose); background: var(--rose-lt); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(244,114,182,0.2); }
+  .q-input:checked + .q-tile { border-color: var(--rose); background: linear-gradient(135deg,#fce7f3,#f3e8ff); box-shadow: 0 4px 16px rgba(244,114,182,0.25); transform: translateY(-2px); }
+  .q-res { font-size: 16px; font-weight: 800; color: var(--ink); }
+  .q-input:checked + .q-tile .q-res { color: var(--rose); }
+  .q-tag {
+    font-size: 9px; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase;
+    padding: 2px 7px; border-radius: 50px; background: white; color: var(--ink-dim); border: 1px solid #f5e8f5;
+  }
+  .q-input:checked + .q-tile .q-tag { background: var(--rose); color: white; border-color: var(--rose); }
+
+  .dl-btn {
+    width: 100%; padding: 15px;
+    background: linear-gradient(135deg, var(--rose) 0%, var(--lilac) 100%);
+    color: white; border: none; border-radius: 50px;
+    font-family: 'Nunito', sans-serif; font-size: 16px; font-weight: 800; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+    box-shadow: 0 6px 24px rgba(244,114,182,0.45);
+  }
+  .dl-btn:hover { opacity: 0.95; transform: translateY(-2px); box-shadow: 0 10px 30px rgba(244,114,182,0.5); }
+  .dl-btn:active { transform: scale(0.98); }
+  .dl-btn:disabled { background: #f5e8f5; color: var(--ink-dim); box-shadow: none; cursor: not-allowed; transform: none; }
+
+  .btn-spinner {
+    width: 18px; height: 18px; border: 2.5px solid rgba(255,255,255,0.4);
+    border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; display: none;
+  }
+  .dl-btn.loading .btn-text { display: none; }
+  .dl-btn.loading .btn-spinner { display: block; }
+
+  .footer { font-size: 12px; color: var(--ink-dim); font-weight: 600; text-align: center; margin-top: 8px; }
+</style>
 </head>
 <body>
-    <h2>Video Downloader</h2>
-    
-    <form method="POST" action="/download/">
-        {% csrf_token %}
-        <input type="text" name="url" placeholder="Paste video link..." required>
-        <button type="submit">Download</button>
-    </form>
 
-    {% if error %}
-        <p style="color: red;">{{ error }}</p>
-    {% endif %}
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="stars" id="starsContainer"></div>
+
+<div class="wrapper">
+
+  <div class="header">
+    <span class="header-emoji">🎀</span>
+    <h1>Save Your Faves</h1>
+    <p>Download videos from YouTube, TikTok, Instagram &amp; more 💖</p>
+  </div>
+
+  {% if error %}
+  <div class="error-box">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+    Oops! {{ error }}
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <div class="card-label">🔗 Paste your link here</div>
+    <form method="POST" action="/preview/" id="previewForm">
+      {% csrf_token %}
+      <div class="input-pill">
+        <input class="url-input" type="text" name="url" id="urlInput"
+          placeholder="Drop a link and let's go ✨"
+          value="{{ url|default:'' }}"
+          autocomplete="off" spellcheck="false" required>
+        <button type="submit" class="fetch-btn" id="previewBtn">✦ Fetch</button>
+      </div>
+    </form>
+    <div class="platform-row">
+      <span class="platform-pill">▶ YouTube</span>
+      <span class="platform-pill">♪ TikTok</span>
+      <span class="platform-pill">◈ Instagram</span>
+      <span class="platform-pill">✦ Twitter / X</span>
+    </div>
+  </div>
+
+  <div class="spinner-wrap" id="previewSpinner">
+    <div class="spinner"></div>
+    <span>Grabbing video info… 🌸</span>
+  </div>
+
+  {% if title %}
+  <div class="result-card">
+    <div class="thumb-wrap">
+      <img src="{{ thumbnail }}" alt="{{ title }}" loading="lazy">
+      <div class="thumb-overlay"></div>
+      {% if platform != "Unknown" %}<span class="platform-tag">{{ platform }}</span>{% endif %}
+      <div class="thumb-title">{{ title }}</div>
+    </div>
+
+    <div class="dl-section">
+      <div class="section-label"><span>💿</span> Pick your quality</div>
+
+      <div class="quality-grid" id="qualityGrid">
+        {% for f in formats %}
+        <input class="q-input" type="radio" name="quality_choice"
+          id="q_{{ f.format_id }}" value="{{ f.format_id }}"
+          {% if forloop.first %}checked{% endif %}>
+        <label class="q-tile" for="q_{{ f.format_id }}">
+          <span class="q-res">{{ f.quality }}</span>
+          <span class="q-tag">
+            {% if f.quality == "2160p" %}4K ✨
+            {% elif f.quality == "1440p" %}2K 💎
+            {% elif f.quality == "1080p" %}FHD 🌟
+            {% elif f.quality == "720p" %}HD ✦
+            {% else %}SD{% endif %}
+          </span>
+        </label>
+        {% endfor %}
+      </div>
+
+      <!-- Hidden form fields — submitted via fetch() so we can track completion -->
+      <input type="hidden" id="hiddenUrl" value="{{ url }}">
+      <input type="hidden" id="hiddenFormatId" value="{{ formats.0.format_id }}">
+      <input type="hidden" id="hiddenCsrf" value="{{ csrf_token }}">
+
+      <button class="dl-btn" id="downloadBtn" onclick="startDownload()">
+        <span class="btn-text">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px">
+            <path d="M12 3v12m0 0l-4-4m4 4l4-4M3 17v1a3 3 0 003 3h12a3 3 0 003-3v-1"/>
+          </svg>
+          Download Now 🎀
+        </span>
+        <div class="btn-spinner"></div>
+      </button>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="footer">made with 💖 · for personal use only</div>
+</div>
+
+<script>
+// Twinkling stars
+(function () {
+  const c = document.getElementById("starsContainer");
+  const colors = ["#f472b6","#c084fc","#fb923c","#38bdf8","#34d399"];
+  for (let i = 0; i < 18; i++) {
+    const s = document.createElement("div");
+    s.className = "star";
+    s.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*100}%;--dur:${3+Math.random()*4}s;--delay:-${Math.random()*6}s;background:${colors[i%colors.length]};width:${5+Math.random()*5}px;height:${5+Math.random()*5}px`;
+    c.appendChild(s);
+  }
+})();
+
+// Auto-submit preview form on paste or typing
+(function () {
+  const input = document.getElementById("urlInput");
+  const form  = document.getElementById("previewForm");
+  const spinner = document.getElementById("previewSpinner");
+  const btn   = document.getElementById("previewBtn");
+  if (!input) return;
+
+  let timer = null;
+  function tryPreview() {
+    const v = input.value.trim();
+    if (v.startsWith("http://") || v.startsWith("https://")) {
+      spinner.classList.add("visible");
+      btn.disabled = true;
+      form.submit();
+    }
+  }
+  input.addEventListener("paste", () => { clearTimeout(timer); timer = setTimeout(tryPreview, 300); });
+  input.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(tryPreview, 1000); });
+})();
+
+// Keep selected format_id in sync with the radio tiles
+document.getElementById("qualityGrid")?.addEventListener("change", function(e) {
+  if (e.target.type === "radio") {
+    document.getElementById("hiddenFormatId").value = e.target.value;
+  }
+});
+
+// Download using fetch() so we know EXACTLY when it's done
+// — the spinner stops only after the file has fully arrived on the user's device
+async function startDownload() {
+  const btn        = document.getElementById("downloadBtn");
+  const url        = document.getElementById("hiddenUrl").value;
+  const format_id  = document.getElementById("hiddenFormatId").value;
+  const csrf       = document.getElementById("hiddenCsrf").value;
+
+  btn.disabled = true;
+  btn.classList.add("loading");
+
+  try {
+    const response = await fetch("/download/", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `url=${encodeURIComponent(url)}&format_id=${encodeURIComponent(format_id)}&csrfmiddlewaretoken=${encodeURIComponent(csrf)}`,
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error("Server error: " + response.status);
+    }
+
+    // Stream the response into a Blob, then trigger the browser Save dialog
+    const blob = await response.blob();
+    const disposition = response.headers.get("Content-Disposition") || "";
+    const match = disposition.match(/filename="?([^"]+)"?/);
+    const filename = match ? match[1] : "video.mp4";
+
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(a.href);
+
+  } catch (err) {
+    alert("Download failed: " + err.message);
+  } finally {
+    // Spinner stops only here — after the file is fully on the user's device
+    btn.disabled = false;
+    btn.classList.remove("loading");
+  }
+}
+</script>
 </body>
 </html>

@@ -21,5 +21,6 @@ from downloader import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.home, name='home'),
+    path('preview/', views.preview_video, name='preview'),
     path('download/', views.download_video, name='download'),
 ]

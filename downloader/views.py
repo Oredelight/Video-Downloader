@@ -1,3 +1,4 @@
+import atexit
 import os
 import re
 import uuid
@@ -17,6 +18,30 @@ ALLOWED_DOMAINS = {
 
 COOKIE_FILE = os.path.join(settings.BASE_DIR, 'youtube_cookies.txt')
 
+_tmp_cookie_file = None
+
+
+def _get_cookie_file():
+
+    global _tmp_cookie_file
+
+    if _tmp_cookie_file and os.path.exists(_tmp_cookie_file):
+        return _tmp_cookie_file
+
+    cookie_content = os.environ.get('YT_COOKIES', '').strip()
+    if cookie_content:
+        tmp = tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False)
+        tmp.write(cookie_content)
+        tmp.close()
+        _tmp_cookie_file = tmp.name
+        atexit.register(lambda: os.unlink(_tmp_cookie_file) if os.path.exists(_tmp_cookie_file) else None)
+        return _tmp_cookie_file
+
+    if os.path.exists(COOKIE_FILE):
+        return COOKIE_FILE
+
+    return None
+
 
 def _ydl_opts(skip_download=False, outtmpl=None):
     opts = {
@@ -27,11 +52,17 @@ def _ydl_opts(skip_download=False, outtmpl=None):
         'youtube_include_dash_manifest': True,
         'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best',
         'merge_output_format': 'mp4',
+        'extractor_args': {
+        'youtube': {
+            'player_client': ['android', 'web'],
+            },
+        },
     }   
     if outtmpl:
         opts['outtmpl'] = outtmpl
-    if os.path.exists(COOKIE_FILE):
-        opts['cookiefile'] = COOKIE_FILE
+    cookie_file = _get_cookie_file()
+    if cookie_file:
+        opts['cookiefile'] = cookie_file
     return opts
 
 
@@ -89,7 +120,7 @@ def preview_video(request):
 
         if not formats_dict:
             return render(request, "home.html", {
-                "error": "No formats found. Please update yt-dlp: pip install -U yt-dlp",
+                "error": "No formats found. Try again or check your cookie file.",
                 "url": url,
             })
 

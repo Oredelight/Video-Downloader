@@ -5,6 +5,8 @@ curl_cffi==0.14.0
 Django==6.0.3
 ffmpeg-python==0.2.0
 future==1.0.0
+gunicorn==25.3.0
+packaging==26.0
 pycparser==3.0
 sqlparse==0.5.5
 tzdata==2025.3

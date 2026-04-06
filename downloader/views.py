@@ -4,6 +4,7 @@ import re
 import uuid
 import shutil
 import tempfile
+import base64
 from django.conf import settings
 from django.shortcuts import render
 from django.http import StreamingHttpResponse
@@ -30,6 +31,11 @@ def _get_cookie_file():
 
     cookie_content = os.environ.get('YT_COOKIES', '').strip()
     if cookie_content:
+        try:
+            cookie_content = base64.b64decode(cookie_content).decode('utf-8')
+        except Exception:
+            pass
+
         tmp = tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False)
         tmp.write(cookie_content)
         tmp.close()

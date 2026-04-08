@@ -10,12 +10,17 @@ from django.views.decorators.csrf import csrf_exempt
 import yt_dlp
 
 
+# Fresh writable copy per request
+tmp = tempfile.NamedTemporaryFile(suffix='.txt', delete=False)
+shutil.copy2('/etc/secrets/cookies.txt', tmp.name)
+
+
 ALLOWED_DOMAINS = {
     "youtube.com", "youtu.be", "tiktok.com",
     "instagram.com", "twitter.com", "x.com"
 }
 
-COOKIE_FILE = os.path.join(settings.BASE_DIR, 'youtube_cookies.txt')
+# COOKIE_FILE = os.path.join(settings.BASE_DIR, 'youtube_cookies.txt')
 
 def _ydl_opts(skip_download=False, outtmpl=None):
     opts = {
@@ -26,7 +31,7 @@ def _ydl_opts(skip_download=False, outtmpl=None):
         'youtube_include_dash_manifest': True,
         'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best',
         'merge_output_format': 'mp4',
-        'cookiefile': '/etc/secrets/cookies.txt'
+        'cookiefile': tmp.name,
     }   
     if outtmpl:
         opts['outtmpl'] = outtmpl

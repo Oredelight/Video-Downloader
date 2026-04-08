@@ -58,11 +58,7 @@ def _ydl_opts(skip_download=False, outtmpl=None):
         'youtube_include_dash_manifest': True,
         'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best',
         'merge_output_format': 'mp4',
-        'extractor_args': {
-        'youtube': {
-            'player_client': ['android', 'web'],
-            },
-        },
+        'cookiefile': '/etc/secrets/cookies.txt'
     }   
     if outtmpl:
         opts['outtmpl'] = outtmpl

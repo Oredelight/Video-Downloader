@@ -1,10 +1,8 @@
-import atexit
 import os
 import re
 import uuid
 import shutil
 import tempfile
-import base64
 from django.conf import settings
 from django.shortcuts import render
 from django.http import StreamingHttpResponse
@@ -19,36 +17,6 @@ ALLOWED_DOMAINS = {
 
 COOKIE_FILE = os.path.join(settings.BASE_DIR, 'youtube_cookies.txt')
 
-_tmp_cookie_file = None
-
-
-def _get_cookie_file():
-
-    global _tmp_cookie_file
-
-    if _tmp_cookie_file and os.path.exists(_tmp_cookie_file):
-        return _tmp_cookie_file
-
-    cookie_content = os.environ.get('YT_COOKIES', '').strip()
-    if cookie_content:
-        try:
-            cookie_content = base64.b64decode(cookie_content).decode('utf-8')
-        except Exception:
-            pass
-
-        tmp = tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False)
-        tmp.write(cookie_content)
-        tmp.close()
-        _tmp_cookie_file = tmp.name
-        atexit.register(lambda: os.unlink(_tmp_cookie_file) if os.path.exists(_tmp_cookie_file) else None)
-        return _tmp_cookie_file
-
-    if os.path.exists(COOKIE_FILE):
-        return COOKIE_FILE
-
-    return None
-
-
 def _ydl_opts(skip_download=False, outtmpl=None):
     opts = {
         'quiet': True,
@@ -62,9 +30,6 @@ def _ydl_opts(skip_download=False, outtmpl=None):
     }   
     if outtmpl:
         opts['outtmpl'] = outtmpl
-    cookie_file = _get_cookie_file()
-    if cookie_file:
-        opts['cookiefile'] = cookie_file
     return opts
 
 

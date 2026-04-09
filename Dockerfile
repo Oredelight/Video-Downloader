@@ -44,5 +44,12 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/ || exit 1
 
-# Run gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "--threads", "2", "--worker-class", "gthread", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-", "videodownloader.wsgi:application"]
+# Create entrypoint script
+RUN echo '#!/bin/bash\n\
+python manage.py migrate --noinput || true\n\
+python manage.py collectstatic --noinput --clear || true\n\
+exec gunicorn --bind 0.0.0.0:8000 --workers 3 --threads 2 --worker-class gthread --timeout 120 --access-logfile - --error-logfile - videodownloader.wsgi:application' > /app/entrypoint.sh && \
+chmod +x /app/entrypoint.sh
+
+# Run gunicorn with entrypoint
+CMD ["/app/entrypoint.sh"]

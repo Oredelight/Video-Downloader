@@ -11,9 +11,20 @@ import imageio_ffmpeg
 import yt_dlp
 
 
-# Fresh writable copy per request
+# Fresh writable copy per request - handle missing cookies gracefully
 tmp = tempfile.NamedTemporaryFile(suffix='.txt', delete=False)
-shutil.copy2('/etc/secrets/cookies.txt', tmp.name)
+cookies_file = '/etc/secrets/cookies.txt'
+
+# Only copy cookies if they exist
+if os.path.exists(cookies_file):
+    try:
+        shutil.copy2(cookies_file, tmp.name)
+    except Exception as e:
+        print(f"Warning: Could not copy cookies file: {e}")
+        # Use empty temp file
+else:
+    # Use empty cookies file if not provided
+    pass
 
 
 ALLOWED_DOMAINS = {

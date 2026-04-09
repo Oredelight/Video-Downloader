@@ -287,7 +287,7 @@
 
       <!-- Hidden form fields — submitted via fetch() so we can track completion -->
       <input type="hidden" id="hiddenUrl" value="{{ url }}">
-      <input type="hidden" name="quality" id="hiddenQuality" value="{{ formats.0.quality }}">
+      <input type="hidden" id="hiddenFormatId" value="{{ formats.0.format_id }}">
       <input type="hidden" id="hiddenCsrf" value="{{ csrf_token }}">
 
       <button class="dl-btn" id="downloadBtn" onclick="startDownload()">
@@ -342,11 +342,9 @@
 
 // Keep selected format_id in sync with the radio tiles
 document.getElementById("qualityGrid")?.addEventListener("change", function(e) {
-    if (e.target.type === "radio") {
-        // Store the quality label (e.g. "1080p") not the format_id
-        const label = document.querySelector(`label[for="${e.target.id}"] .q-res`);
-        document.getElementById("hiddenFormatId").value = label ? label.textContent.trim() : e.target.value;
-    }
+  if (e.target.type === "radio") {
+    document.getElementById("hiddenFormatId").value = e.target.value;
+  }
 });
 
 // Download using fetch() so we know EXACTLY when it's done
@@ -354,7 +352,7 @@ document.getElementById("qualityGrid")?.addEventListener("change", function(e) {
 async function startDownload() {
   const btn        = document.getElementById("downloadBtn");
   const url        = document.getElementById("hiddenUrl").value;
-  const quality = document.getElementById("hiddenQuality").value;
+  const format_id  = document.getElementById("hiddenFormatId").value;
   const csrf       = document.getElementById("hiddenCsrf").value;
 
   btn.disabled = true;
@@ -364,7 +362,7 @@ async function startDownload() {
     const response = await fetch("/download/", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: `url=${encodeURIComponent(url)}&quality=${encodeURIComponent(format_id)}&csrfmiddlewaretoken=...`,
+      body: `url=${encodeURIComponent(url)}&format_id=${encodeURIComponent(format_id)}&csrfmiddlewaretoken=${encodeURIComponent(csrf)}`,
     });
 
     if (!response.ok) {

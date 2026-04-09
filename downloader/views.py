@@ -151,7 +151,7 @@ def download_video(request):
     )
 
     opts.update({
-        'format': f'{format_id}+bestaudio[ext=m4a]/{format_id}+bestaudio/best',
+        'format': f'({format_id}+bestaudio/best)/(bestvideo+bestaudio/best)',
         'merge_output_format': 'mp4',
         'overwrites': True,
         'nopart': True,

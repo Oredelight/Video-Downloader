@@ -74,7 +74,9 @@ def preview_video(request):
         return render(request, "home.html", {"error": "Unsupported URL. Paste a YouTube, TikTok, or Instagram link."})
 
     try:
-        with yt_dlp.YoutubeDL(_ydl_opts(skip_download=True)) as ydl:
+        opts = _ydl_opts(skip_download=True)
+        opts.pop('format', None)  # Remove format constraint for preview
+        with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(url, download=False)
             if 'entries' in info:
                 info = info['entries'][0]
@@ -150,7 +152,15 @@ def download_video(request):
     filename = None
     try:
         with yt_dlp.YoutubeDL(opts) as ydl:
-            info = ydl.extract_info(url, download=True)
+            try:
+                info = ydl.extract_info(url, download=True)
+            except Exception as e:
+                # Format might not be available on this platform, try best
+                if "format" in str(e).lower():
+                    opts['format'] = 'best'
+                    info = ydl.extract_info(url, download=True)
+                else:
+                    raise
             if 'entries' in info:
                 info = info['entries'][0]
 

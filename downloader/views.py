@@ -7,6 +7,7 @@ from django.conf import settings
 from django.shortcuts import render
 from django.http import StreamingHttpResponse
 from django.views.decorators.csrf import csrf_exempt
+import imageio_ffmpeg
 import yt_dlp
 
 
@@ -32,6 +33,7 @@ def _ydl_opts(skip_download=False, outtmpl=None):
         'format': 'bv*+ba/b',
         'merge_output_format': 'mp4',
         'cookiefile': tmp.name,
+        'ffmpeg_location': imageio_ffmpeg.get_ffmpeg_exe(),
     }   
     if outtmpl:
         opts['outtmpl'] = outtmpl
@@ -127,7 +129,7 @@ def download_video(request):
     if not is_url_allowed(url):
         return render(request, "home.html", {"error": "Unsupported URL."})
     if not re.match(r'^[\w\-.]+$', format_id): 
-        return render(request, "home.html", {"error": "Invalid format ID."})
+        return render(request, "home.html", {"error": "Invalid format ID."}) 
 
     tmp_dir = tempfile.mkdtemp(prefix='vdrop_')
     safe_name = str(uuid.uuid4())

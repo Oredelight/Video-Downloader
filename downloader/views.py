@@ -135,19 +135,14 @@ def download_video(request):
     tmp_dir = tempfile.mkdtemp(prefix='vdrop_')
     safe_name = str(uuid.uuid4())
 
+    format_str = f'bestvideo[height<={height}]+bestaudio/best[height<={height}]/best'
+ 
     opts = _ydl_opts(
         skip_download=False,
         outtmpl=os.path.join(tmp_dir, f'{safe_name}.%(ext)s'),
+        format_str=format_str,
     )
     opts.update({
-        'format': (
-            f'bestvideo[height={height}]+bestaudio[ext=m4a]/'
-            f'bestvideo[height={height}]+bestaudio/'
-            f'bestvideo[height<={height}]+bestaudio[ext=m4a]/'
-            f'bestvideo[height<={height}]+bestaudio/'
-            f'best[height<={height}]/'
-            f'best'
-        ),
         'merge_output_format': 'mp4',
         'overwrites': True,
         'nopart': True,

@@ -287,7 +287,7 @@
 
       <!-- Hidden form fields — submitted via fetch() so we can track completion -->
       <input type="hidden" id="hiddenUrl" value="{{ url }}">
-      <input type="hidden" name="quality" id="hiddenFormatId" value="{{ formats.0.quality }}">
+      <input type="hidden" name="quality" id="hiddenQuality" value="{{ formats.0.quality }}">
       <input type="hidden" id="hiddenCsrf" value="{{ csrf_token }}">
 
       <button class="dl-btn" id="downloadBtn" onclick="startDownload()">
@@ -354,7 +354,7 @@ document.getElementById("qualityGrid")?.addEventListener("change", function(e) {
 async function startDownload() {
   const btn        = document.getElementById("downloadBtn");
   const url        = document.getElementById("hiddenUrl").value;
-  const format_id  = document.getElementById("hiddenFormatId").value;
+  const quality = document.getElementById("hiddenQuality").value;
   const csrf       = document.getElementById("hiddenCsrf").value;
 
   btn.disabled = true;

@@ -29,7 +29,7 @@ def _ydl_opts(skip_download=False, outtmpl=None):
         'noplaylist': True,
         'nocheckcertificate': True,
         'youtube_include_dash_manifest': True,
-        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best',
+        'format': 'bv*+ba/b',
         'merge_output_format': 'mp4',
         'cookiefile': tmp.name,
     }   
@@ -140,8 +140,8 @@ def download_video(request):
     opts = _ydl_opts(
         skip_download=False,
         outtmpl=os.path.join(tmp_dir, f'{safe_name}.%(ext)s'),
-        format_str=format_str,
     )
+    opts['format'] = format_str
     opts.update({
         'merge_output_format': 'mp4',
         'overwrites': True,

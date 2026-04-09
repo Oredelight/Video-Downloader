@@ -29,9 +29,7 @@ def _ydl_opts(skip_download=False, outtmpl=None):
         'skip_download': skip_download,
         'noplaylist': True,
         'nocheckcertificate': True,
-        'youtube_include_dash_manifest': True,
-        'format': 'best[ext=mp4]/best',
-        'merge_output_format': 'mp4',
+        'format': 'best',
         'cookiefile': tmp.name,
         'ffmpeg_location': imageio_ffmpeg.get_ffmpeg_exe(),
     }   
@@ -140,10 +138,13 @@ def download_video(request):
     )
 
     opts.update({
-        'format': f'{format_id}+bestaudio/best',
-        'merge_output_format': 'mp4',
+        'format': f'{format_id}/best',
         'overwrites': True,
         'nopart': True,
+        'postprocessors': [{
+            'key': 'FFmpegVideoConvertor',
+            'preferedformat': 'mp4',
+        }],
     })
 
     filename = None

@@ -135,8 +135,8 @@ def download_video(request):
     tmp_dir = tempfile.mkdtemp(prefix='vdrop_')
     safe_name = str(uuid.uuid4())
 
-    format_str = f'bestvideo[height<={height}]+bestaudio/best[height<={height}]/best'
- 
+    format_str = format_str = f'bestvideo[height<={height}]+bestaudio/best/bv*+ba/b'
+    
     opts = _ydl_opts(
         skip_download=False,
         outtmpl=os.path.join(tmp_dir, f'{safe_name}.%(ext)s'),

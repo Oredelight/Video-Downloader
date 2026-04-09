@@ -19,6 +19,3 @@ services:
     
     # Health check
     healthCheckPath: /
-    
-    # Maximum build/deployment time
-    preDeployCommand: "python manage.py migrate"

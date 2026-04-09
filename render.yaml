@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: videodownloader
+    runtime: docker
+    plan: free
+    region: oregon
+    
+    # Build settings
+    dockerfilePath: ./Dockerfile
+    
+    # Environment variables - add in Render dashboard
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: videodownloader.settings
+      - key: DEBUG
+        value: "False"
+      - key: RENDER
+        value: "True"
+    
+    # Health check
+    healthCheckPath: /
+    
+    # Maximum build/deployment time
+    preDeployCommand: "python manage.py migrate"

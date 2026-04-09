@@ -29,7 +29,9 @@ def _ydl_opts(skip_download=False, outtmpl=None):
         'skip_download': skip_download,
         'noplaylist': True,
         'nocheckcertificate': True,
-        'format': 'best',
+        'youtube_include_dash_manifest': True,
+        'format': 'bv*+ba/b',
+        'merge_output_format': 'mp4',
         'cookiefile': tmp.name,
         'ffmpeg_location': imageio_ffmpeg.get_ffmpeg_exe(),
     }   
@@ -74,9 +76,7 @@ def preview_video(request):
         return render(request, "home.html", {"error": "Unsupported URL. Paste a YouTube, TikTok, or Instagram link."})
 
     try:
-        opts = _ydl_opts(skip_download=True)
-        opts.pop('format', None)  # Remove format constraint for preview
-        with yt_dlp.YoutubeDL(opts) as ydl:
+        with yt_dlp.YoutubeDL(_ydl_opts(skip_download=True)) as ydl:
             info = ydl.extract_info(url, download=False)
             if 'entries' in info:
                 info = info['entries'][0]
@@ -140,27 +140,16 @@ def download_video(request):
     )
 
     opts.update({
-        'format': f'{format_id}/best',
+        'format': f'{format_id}+bestaudio[ext=m4a]/{format_id}+bestaudio/best',
+        'merge_output_format': 'mp4',
         'overwrites': True,
         'nopart': True,
-        'postprocessors': [{
-            'key': 'FFmpegVideoConvertor',
-            'preferedformat': 'mp4',
-        }],
     })
 
     filename = None
     try:
         with yt_dlp.YoutubeDL(opts) as ydl:
-            try:
-                info = ydl.extract_info(url, download=True)
-            except Exception as e:
-                # Format might not be available on this platform, try best
-                if "format" in str(e).lower():
-                    opts['format'] = 'best'
-                    info = ydl.extract_info(url, download=True)
-                else:
-                    raise
+            info = ydl.extract_info(url, download=True)
             if 'entries' in info:
                 info = info['entries'][0]
 

@@ -120,14 +120,17 @@ def download_video(request):
         return render(request, "home.html")
 
     url = request.POST.get("url", "").strip()
-    format_id = request.POST.get("format_id", "").strip()
+    quality = request.POST.get("quality", "").strip()
 
-    if not url or not format_id:
+    if not url or not quality:
         return render(request, "home.html", {"error": "Missing URL or format."})
     if not is_url_allowed(url):
         return render(request, "home.html", {"error": "Unsupported URL."})
-    if not re.match(r'^[\w\-.]+$', format_id):
-        return render(request, "home.html", {"error": "Invalid format ID."})
+    
+    try:
+        height = int(quality.replace('p', ''))
+    except ValueError:
+        return render(request, "home.html", {"error": "Invalid quality selected."})
 
     tmp_dir = tempfile.mkdtemp(prefix='vdrop_')
     safe_name = str(uuid.uuid4())
@@ -137,7 +140,14 @@ def download_video(request):
         outtmpl=os.path.join(tmp_dir, f'{safe_name}.%(ext)s'),
     )
     opts.update({
-        'format': f'{format_id}+bestaudio[ext=m4a]/{format_id}+bestaudio/best',
+        'format': (
+            f'bestvideo[height={height}]+bestaudio[ext=m4a]/'
+            f'bestvideo[height={height}]+bestaudio/'
+            f'bestvideo[height<={height}]+bestaudio[ext=m4a]/'
+            f'bestvideo[height<={height}]+bestaudio/'
+            f'best[height<={height}]/'
+            f'best'
+        ),
         'merge_output_format': 'mp4',
         'overwrites': True,
         'nopart': True,

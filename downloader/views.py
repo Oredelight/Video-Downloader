@@ -41,7 +41,6 @@ def _ydl_opts(skip_download=False, outtmpl=None):
         'noplaylist': True,
         'nocheckcertificate': True,
         'youtube_include_dash_manifest': True,
-        'format': 'bv*+ba/b',
         'merge_output_format': 'mp4',
         'cookiefile': tmp.name,
         'ffmpeg_location': imageio_ffmpeg.get_ffmpeg_exe(),
@@ -199,28 +198,3 @@ def download_video(request):
         shutil.rmtree(tmp_dir, ignore_errors=True)
         return render(request, "home.html", {"error": str(e)})
     
-def debug_formats(request):
-    from django.http import JsonResponse
-    url = request.GET.get("url", "").strip()
-    if not url:
-        return JsonResponse({"error": "Pass ?url=YOUR_YOUTUBE_URL"})
-    
-    try:
-        opts = _ydl_opts(skip_download=True)  # use your actual function name
-        results = []
-        with yt_dlp.YoutubeDL(opts) as ydl:
-            info = ydl.extract_info(url, download=False)
-            if 'entries' in info:
-                info = info['entries'][0]
-            for f in info.get('formats', []):
-                results.append({
-                    'format_id': f.get('format_id'),
-                    'ext': f.get('ext'),
-                    'height': f.get('height'),
-                    'vcodec': f.get('vcodec'),
-                    'acodec': f.get('acodec'),
-                    'tbr': f.get('tbr'),
-                })
-        return JsonResponse({"formats": results, "total": len(results)})
-    except Exception as e:
-        return JsonResponse({"error": str(e)})

@@ -200,26 +200,27 @@ def download_video(request):
         return render(request, "home.html", {"error": str(e)})
     
 def debug_formats(request):
+    from django.http import JsonResponse
     url = request.GET.get("url", "").strip()
     if not url:
         return JsonResponse({"error": "Pass ?url=YOUR_YOUTUBE_URL"})
     
-    opts = _ydl_opts()  # or _ydl_opts — whatever your current function is called
-    opts['skip_download'] = True
-    
-    results = []
-    with yt_dlp.YoutubeDL(opts) as ydl:
-        info = ydl.extract_info(url, download=False)
-        if 'entries' in info:
-            info = info['entries'][0]
-        for f in info.get('formats', []):
-            results.append({
-                'format_id': f.get('format_id'),
-                'ext': f.get('ext'),
-                'height': f.get('height'),
-                'vcodec': f.get('vcodec'),
-                'acodec': f.get('acodec'),
-                'tbr': f.get('tbr'),
-            })
-    
-    return JsonResponse({"formats": results, "total": len(results)})
+    try:
+        opts = _ydl_opts(skip_download=True)  # use your actual function name
+        results = []
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            if 'entries' in info:
+                info = info['entries'][0]
+            for f in info.get('formats', []):
+                results.append({
+                    'format_id': f.get('format_id'),
+                    'ext': f.get('ext'),
+                    'height': f.get('height'),
+                    'vcodec': f.get('vcodec'),
+                    'acodec': f.get('acodec'),
+                    'tbr': f.get('tbr'),
+                })
+        return JsonResponse({"formats": results, "total": len(results)})
+    except Exception as e:
+        return JsonResponse({"error": str(e)})

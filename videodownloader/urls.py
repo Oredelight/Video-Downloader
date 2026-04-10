@@ -23,4 +23,5 @@ urlpatterns = [
     path('', views.home, name='home'),
     path('preview/', views.preview_video, name='preview'),
     path('download/', views.download_video, name='download'),
+    path('debug-formats/', views.debug_formats, name='debug-formats'),
 ]

@@ -5,7 +5,7 @@ import shutil
 import tempfile
 from django.conf import settings
 from django.shortcuts import render
-from django.http import StreamingHttpResponse
+from django.http import JsonResponse, StreamingHttpResponse
 from django.views.decorators.csrf import csrf_exempt
 import imageio_ffmpeg
 import yt_dlp
@@ -198,3 +198,28 @@ def download_video(request):
     except Exception as e:
         shutil.rmtree(tmp_dir, ignore_errors=True)
         return render(request, "home.html", {"error": str(e)})
+    
+def debug_formats(request):
+    url = request.GET.get("url", "").strip()
+    if not url:
+        return JsonResponse({"error": "Pass ?url=YOUR_YOUTUBE_URL"})
+    
+    opts = _ydl_opts()  # or _ydl_opts — whatever your current function is called
+    opts['skip_download'] = True
+    
+    results = []
+    with yt_dlp.YoutubeDL(opts) as ydl:
+        info = ydl.extract_info(url, download=False)
+        if 'entries' in info:
+            info = info['entries'][0]
+        for f in info.get('formats', []):
+            results.append({
+                'format_id': f.get('format_id'),
+                'ext': f.get('ext'),
+                'height': f.get('height'),
+                'vcodec': f.get('vcodec'),
+                'acodec': f.get('acodec'),
+                'tbr': f.get('tbr'),
+            })
+    
+    return JsonResponse({"formats": results, "total": len(results)})

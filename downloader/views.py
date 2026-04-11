@@ -3,7 +3,6 @@ import re
 import uuid
 import shutil
 import tempfile
-from django.conf import settings
 from django.shortcuts import render
 from django.http import JsonResponse, StreamingHttpResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -11,20 +10,14 @@ import imageio_ffmpeg
 import yt_dlp
 
 
-# Fresh writable copy per request - handle missing cookies gracefully
-tmp = tempfile.NamedTemporaryFile(suffix='.txt', delete=False)
-cookies_file = '/etc/secrets/cookies.txt'
-
-# Only copy cookies if they exist
-if os.path.exists(cookies_file):
+# Copy read-only Render secret to a writable temp file once at startup
+_cookie_tmp = tempfile.NamedTemporaryFile(suffix='.txt', delete=False)
+_render_cookie = '/etc/secrets/cookies.txt'
+if os.path.exists(_render_cookie):
     try:
-        shutil.copy2(cookies_file, tmp.name)
+        shutil.copy2(_render_cookie, _cookie_tmp.name)
     except Exception as e:
-        print(f"Warning: Could not copy cookies file: {e}")
-        # Use empty temp file
-else:
-    # Use empty cookies file if not provided
-    pass
+        print(f"Warning: Could not copy cookies: {e}")
 
 
 ALLOWED_DOMAINS = {
@@ -32,19 +25,22 @@ ALLOWED_DOMAINS = {
     "instagram.com", "twitter.com", "x.com"
 }
 
-# COOKIE_FILE = os.path.join(settings.BASE_DIR, 'youtube_cookies.txt')
 
 def _ydl_opts(skip_download=False, outtmpl=None):
+    """
+    Base opts — NO 'format' key here.
+    format is only set in download_video so it never
+    interferes with plain info fetching.
+    """
     opts = {
         'quiet': True,
         'skip_download': skip_download,
         'noplaylist': True,
         'nocheckcertificate': True,
         'youtube_include_dash_manifest': True,
-        'merge_output_format': 'mp4',
-        'cookiefile': tmp.name,
+        'cookiefile': _cookie_tmp.name,
         'ffmpeg_location': imageio_ffmpeg.get_ffmpeg_exe(),
-    }   
+    }
     if outtmpl:
         opts['outtmpl'] = outtmpl
     return opts
@@ -75,6 +71,31 @@ def home(request):
     return render(request, "home.html")
 
 
+# ── Debug view — remove after confirming formats work ──
+def debug_formats(request):
+    url = request.GET.get("url", "").strip()
+    if not url:
+        return JsonResponse({"error": "Pass ?url=YOUR_YOUTUBE_URL"})
+    try:
+        results = []
+        with yt_dlp.YoutubeDL(_ydl_opts(skip_download=True)) as ydl:
+            info = ydl.extract_info(url, download=False)
+            if 'entries' in info:
+                info = info['entries'][0]
+            for f in info.get('formats', []):
+                results.append({
+                    'format_id': f.get('format_id'),
+                    'ext': f.get('ext'),
+                    'height': f.get('height'),
+                    'vcodec': f.get('vcodec'),
+                    'acodec': f.get('acodec'),
+                    'tbr': f.get('tbr'),
+                })
+        return JsonResponse({"total": len(results), "formats": results})
+    except Exception as e:
+        return JsonResponse({"error": str(e)})
+
+
 def preview_video(request):
     if request.method != "POST":
         return render(request, "home.html")
@@ -83,7 +104,7 @@ def preview_video(request):
     if not url:
         return render(request, "home.html", {"error": "Please enter a URL."})
     if not is_url_allowed(url):
-        return render(request, "home.html", {"error": "Unsupported URL. Paste a YouTube, TikTok, or Instagram link."})
+        return render(request, "home.html", {"error": "Unsupported URL."})
 
     try:
         with yt_dlp.YoutubeDL(_ydl_opts(skip_download=True)) as ydl:
@@ -104,7 +125,7 @@ def preview_video(request):
 
         if not formats_dict:
             return render(request, "home.html", {
-                "error": "No formats found. Try again or check your cookie file.",
+                "error": "No formats found.",
                 "url": url,
             })
 
@@ -132,25 +153,56 @@ def download_video(request):
         return render(request, "home.html")
 
     url = request.POST.get("url", "").strip()
-    format_id = request.POST.get("format_id", "").strip()
+    quality = request.POST.get("quality", "").strip()  # "1080p", "720p" etc.
 
-    if not url or not format_id:
-        return render(request, "home.html", {"error": "Missing URL or format."})
+    if not url or not quality:
+        return render(request, "home.html", {"error": "Missing URL or quality."})
     if not is_url_allowed(url):
         return render(request, "home.html", {"error": "Unsupported URL."})
-    if not re.match(r'^[\w\-.]+$', format_id): 
-        return render(request, "home.html", {"error": "Invalid format ID."}) 
+
+    try:
+        height = int(quality.replace('p', ''))
+    except ValueError:
+        return render(request, "home.html", {"error": "Invalid quality."})
 
     tmp_dir = tempfile.mkdtemp(prefix='vdrop_')
     safe_name = str(uuid.uuid4())
-    
+
     opts = _ydl_opts(
         skip_download=False,
         outtmpl=os.path.join(tmp_dir, f'{safe_name}.%(ext)s'),
     )
 
+    # Re-fetch available formats fresh at download time so we never
+    # use a stale format_id that YouTube has already rotated out.
+    try:
+        fresh_formats = []
+        with yt_dlp.YoutubeDL(_ydl_opts(skip_download=True)) as ydl:
+            info = ydl.extract_info(url, download=False)
+            if 'entries' in info:
+                info = info['entries'][0]
+            for f in info.get('formats', []):
+                if not f.get('vcodec') or f.get('vcodec') == 'none':
+                    continue
+                h = f.get('height')
+                if not h:
+                    continue
+                fresh_formats.append((h, f['format_id']))
+
+        # Pick the best format_id at or below the requested height
+        candidates = [(h, fid) for h, fid in fresh_formats if h <= height]
+        if candidates:
+            chosen_id = max(candidates, key=lambda x: x[0])[1]
+        else:
+            # Nothing at or below requested height — just take highest available
+            chosen_id = max(fresh_formats, key=lambda x: x[0])[1]
+
+    except Exception as e:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        return render(request, "home.html", {"error": f"Could not fetch formats: {e}"})
+
     opts.update({
-        'format': f'{format_id}+bestaudio[ext=m4a]/{format_id}+bestaudio/best',
+        'format': f'{chosen_id}+bestaudio[ext=m4a]/{chosen_id}+bestaudio/{chosen_id}',
         'merge_output_format': 'mp4',
         'overwrites': True,
         'nopart': True,
@@ -159,11 +211,11 @@ def download_video(request):
     filename = None
     try:
         with yt_dlp.YoutubeDL(opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-            if 'entries' in info:
-                info = info['entries'][0]
+            dl_info = ydl.extract_info(url, download=True)
+            if 'entries' in dl_info:
+                dl_info = dl_info['entries'][0]
 
-            base = os.path.splitext(ydl.prepare_filename(info))[0]
+            base = os.path.splitext(ydl.prepare_filename(dl_info))[0]
             if os.path.exists(base + '.mp4'):
                 filename = base + '.mp4'
             else:
@@ -176,7 +228,7 @@ def download_video(request):
                     raise FileNotFoundError("Output file not found after download.")
                 filename = files[0]
 
-        safe_title = re.sub(r'[^\w\s\-.]', '', info.get('title', 'video')).strip()[:80] or 'video'
+        safe_title = re.sub(r'[^\w\s\-.]', '', dl_info.get('title', 'video')).strip()[:80] or 'video'
         download_name = safe_title + os.path.splitext(filename)[1]
         file_size = os.path.getsize(filename)
 
@@ -197,4 +249,3 @@ def download_video(request):
     except Exception as e:
         shutil.rmtree(tmp_dir, ignore_errors=True)
         return render(request, "home.html", {"error": str(e)})
-    

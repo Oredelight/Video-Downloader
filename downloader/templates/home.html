@@ -287,7 +287,7 @@
 
       <!-- Hidden form fields — submitted via fetch() so we can track completion -->
       <input type="hidden" id="hiddenUrl" value="{{ url }}">
-      <input type="hidden" id="hiddenFormatId" value="{{ formats.0.format_id }}">
+      <input type="hidden" name="quality" id="hiddenQuality" value="{{ formats.0.quality }}">
       <input type="hidden" id="hiddenCsrf" value="{{ csrf_token }}">
 
       <button class="dl-btn" id="downloadBtn" onclick="startDownload()">
@@ -343,7 +343,8 @@
 // Keep selected format_id in sync with the radio tiles
 document.getElementById("qualityGrid")?.addEventListener("change", function(e) {
   if (e.target.type === "radio") {
-    document.getElementById("hiddenFormatId").value = e.target.value;
+    const res = document.querySelector(`label[for="${e.target.id}"] .q-res`);
+    document.getElementById("hiddenQuality").value = res ? res.textContent.trim() : e.target.value;
   }
 });
 
@@ -352,7 +353,7 @@ document.getElementById("qualityGrid")?.addEventListener("change", function(e) {
 async function startDownload() {
   const btn        = document.getElementById("downloadBtn");
   const url        = document.getElementById("hiddenUrl").value;
-  const format_id  = document.getElementById("hiddenFormatId").value;
+  const quality = document.getElementById("hiddenQuality").value;
   const csrf       = document.getElementById("hiddenCsrf").value;
 
   btn.disabled = true;
@@ -362,7 +363,7 @@ async function startDownload() {
     const response = await fetch("/download/", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: `url=${encodeURIComponent(url)}&format_id=${encodeURIComponent(format_id)}&csrfmiddlewaretoken=${encodeURIComponent(csrf)}`,
+      body: `url=${encodeURIComponent(url)}&quality=${encodeURIComponent(quality)}&csrfmiddlewaretoken=${encodeURIComponent(csrf)}`,
     });
 
     if (!response.ok) {

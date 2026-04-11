@@ -27,11 +27,6 @@ ALLOWED_DOMAINS = {
 
 
 def _ydl_opts(skip_download=False, outtmpl=None):
-    """
-    Base opts — NO 'format' key here.
-    format is only set in download_video so it never
-    interferes with plain info fetching.
-    """
     opts = {
         'quiet': True,
         'skip_download': skip_download,
@@ -40,6 +35,12 @@ def _ydl_opts(skip_download=False, outtmpl=None):
         #'youtube_include_dash_manifest': True,
         'cookiefile': _cookie_tmp.name,
         'ffmpeg_location': imageio_ffmpeg.get_ffmpeg_exe(),
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['ios'],
+                'player_skip': ['webpage', 'js'],  # skip JS entirely
+            },
+        },
     }
     if outtmpl:
         opts['outtmpl'] = outtmpl

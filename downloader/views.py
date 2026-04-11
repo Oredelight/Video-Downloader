@@ -37,7 +37,7 @@ def _ydl_opts(skip_download=False, outtmpl=None):
         'skip_download': skip_download,
         'noplaylist': True,
         'nocheckcertificate': True,
-        'youtube_include_dash_manifest': True,
+        #'youtube_include_dash_manifest': True,
         'cookiefile': _cookie_tmp.name,
         'ffmpeg_location': imageio_ffmpeg.get_ffmpeg_exe(),
     }

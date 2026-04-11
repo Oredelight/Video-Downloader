@@ -38,7 +38,6 @@ def _ydl_opts(skip_download=False, outtmpl=None):
         'extractor_args': {
             'youtube': {
                 'player_client': ['ios'],
-                'player_skip': ['webpage', 'js'],  # skip JS entirely
             },
         },
     }

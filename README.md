@@ -4,32 +4,6 @@ A sleek, modern web application built with **Django** that allows you to downloa
 
 ---
 
-## Features
-
-### Core Download Capabilities
-- **Multi-Platform Support**: Download from YouTube, TikTok, Instagram, and Twitter/X
-- **Multiple Quality Options**: Choose from available video resolutions (144p, 240p, 360p, 480p, 720p, 1080p, 4K, etc.)
-- **Automatic Format Detection**: Smart detection of available formats for optimal downloading
-- **Best Quality Merging**: Automatically merges best video and audio streams for superior quality
-- **Video Preview**: See video thumbnail and metadata before downloading
-
-### User Interface
-- **Beautiful Design**: Modern, gradient-based UI with smooth animations
-- **Responsive Layout**: Mobile-friendly design that works on all devices
-- **Real-time Format Detection**: Shows available quality options instantly
-- **Intuitive Error Handling**: Clear, user-friendly error messages
-- **Loading Indicators**: Visual feedback during processing
-
-### Technical Features
-- **Platform Detection**: Automatically identifies which platform the video is from
-- **Cookie Management**: Supports authentication via cookies for age-restricted or private content
-- **FFmpeg Integration**: Professional video processing for best results
-- **Temporary File Management**: Automatic cleanup of temporary files
-- **UUID-based Naming**: Safe, collision-free file naming system
-- **CSRF Protection**: Built-in Django security for form submissions
-
----
-
 ## Project Overview
 
 **Dreamy Downloader** is a Django-based web application that serves as a frontend to the powerful `yt-dlp` library, extended to support multiple video platforms. Unlike simple YouTube download tools, this application:
@@ -68,16 +42,6 @@ The application consists of:
 ### Database
 - **SQLite 3** - Local development database
 - **SQLparse 0.5.5** - SQL parsing utilities
-
-### Additional Dependencies
-- **ASGIREF 3.11.1** - ASGI utilities
-- **Certifi 2026.2.25** - SSL certificates
-- **cffi & pycparser** - C foreign function interface
-- **click & colorama** - CLI utilities
-- **curl_cffi** - HTTP requests with curl backend
-- **packaging** - Package utilities
-- **future** - Python 2/3 compatibility
-- **tzdata** - Timezone database
 
 ### Frontend
 - **HTML5** - Semantic markup

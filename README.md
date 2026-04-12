@@ -118,7 +118,7 @@ The application consists of:
 
 #### Step 1: Clone Repository
 ```bash
-git clone <your-repository-url>
+git clone https://github.com/Oredelight/Video-Downloader
 cd videodownloader
 ```
 
@@ -298,8 +298,6 @@ Open your browser and navigate to:
 - Your browser will initiate the download
 - The file will be named `[uuid].mp4` with sanitized title information
 
-```
-
 ## API Endpoints
 
 ### 1. Home Page
@@ -350,7 +348,6 @@ Open your browser and navigate to:
   - Returns error if URL is invalid
   - Returns error if quality parameter is malformed
   - Returns error if download fails
-
 ---
-
 **Happy Downloading!✨**
+

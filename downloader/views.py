@@ -15,9 +15,9 @@ _cookie_tmp = tempfile.NamedTemporaryFile(suffix='.txt', delete=False)
 _render_cookie = '/etc/secrets/cookies.txt'
 if os.path.exists(_render_cookie):
     try:
-        shutil.copy2(_render_cookie, _cookie_tmp.name)
+       shutil.copy2(_render_cookie, _cookie_tmp.name)
     except Exception as e:
-        print(f"Warning: Could not copy cookies: {e}")
+       print(f"Warning: Could not copy cookies: {e}")
 
 
 ALLOWED_DOMAINS = {
@@ -32,14 +32,11 @@ def _ydl_opts(skip_download=False, outtmpl=None):
         'skip_download': skip_download,
         'noplaylist': True,
         'nocheckcertificate': True,
-        #'youtube_include_dash_manifest': True,
+        'youtube_include_dash_manifest': True,
+        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best',
+        'merge_output_format': 'mp4',
         'cookiefile': _cookie_tmp.name,
         'ffmpeg_location': imageio_ffmpeg.get_ffmpeg_exe(),
-        'extractor_args': {
-            'youtube': {
-                'player_client': ['ios'],
-            },
-        },
     }
     if outtmpl:
         opts['outtmpl'] = outtmpl

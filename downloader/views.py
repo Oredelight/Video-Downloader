@@ -11,11 +11,13 @@ import yt_dlp
 
 
 # Copy read-only Render secret to a writable temp file once at startup
-_cookie_tmp = tempfile.NamedTemporaryFile(suffix='.txt', delete=False)
+_cookie_file = None
 _render_cookie = '/etc/secrets/cookies.txt'
 if os.path.exists(_render_cookie):
     try:
-       shutil.copy2(_render_cookie, _cookie_tmp.name)
+        _cookie_tmp = tempfile.NamedTemporaryFile(suffix='.txt', delete=False)
+        shutil.copy2(_render_cookie, _cookie_tmp.name)
+        _cookie_file = _cookie_tmp.name
     except Exception as e:
        print(f"Warning: Could not copy cookies: {e}")
 
@@ -35,9 +37,11 @@ def _ydl_opts(skip_download=False, outtmpl=None):
         'youtube_include_dash_manifest': True,
         'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best',
         'merge_output_format': 'mp4',
-        'cookiefile': _cookie_tmp.name,
         'ffmpeg_location': imageio_ffmpeg.get_ffmpeg_exe(),
     }
+    # Only add cookiefile if it exists and has content
+    if _cookie_file and os.path.exists(_cookie_file) and os.path.getsize(_cookie_file) > 0:
+        opts['cookiefile'] = _cookie_file
     if outtmpl:
         opts['outtmpl'] = outtmpl
     return opts
